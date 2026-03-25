@@ -1,0 +1,97 @@
+---
+title: Leveraging wastewater data to predict norovirus cases
+author: Sara Kim
+output: html_document
+---
+
+```{r, here-i-am, include = FALSE}
+here::i_am(
+  "report.Rmd"
+)
+```
+
+```{r, set-up, include = FALSE}
+full_data  <- readRDS(here::here("data/noro_for_data550_clean.rds"))
+test_data_with_predictions  <- readRDS(here::here("data/test_data_with_predictions.rds"))
+pacman::p_load(dplyr, tidyr, lubridate, ggplot2, zoo, gt)
+```
+
+# Project overview
+
+Forecasting norovirus only using case surveillance may be limited because norovirus is underreported in the United States. Wastewater surveillance could support developing norovirus forecasts because it 1) does not require individuals to seek medical care to be capture and 2) does not require reporting by clinicians or public health jurisdictions. Thus, we aimed to investigate whether wastewater data improve forecasts for norovirus cases. To answer this question, we defined three models, one using only case data, one using only wastewater data, and one using both, to forecast norovirus cases one week ahead. We evaluated models using the root mean squared error. 
+
+
+# Time series 
+
+The figure below shows the number of norovirus cases and norovirus concentration levels in wastewater per day. Case data and wastewater data appear to have trends that generally align. 
+
+```{r time-series, fig.align="center", fig.width=16, fig.height=8, echo = FALSE}
+ggplot() +
+  geom_line(data = full_data, aes(x = date, y = ave_cases, color = "Cases (7-day average)", group=1)) +
+  geom_line(data = full_data, aes(x = date, y = noro_wastewater_scaled, color = "Wastewater (scaled)", group=1)) +
+  scale_color_manual(name = "Data Source", values = c(
+    "Cases (7-day average)" = "black",
+    "Wastewater (scaled)" = "blue"
+  )) +
+  scale_x_date(
+    date_breaks = "2 months",  
+    date_labels = "%b %Y"
+  ) +
+  xlab("") + ylab("Norovirus cases and nucleic acid quantity") +
+  theme_minimal()
+
+```
+
+# Evaluation of prediction models
+
+To evaluate how well models forecasted norovirus cases one week ahead, we used the root mean squared error. Wastewater data did not improve one week ahead forecasts of norovirus cases. 
+
+```{r evaluate-models, echo = FALSE}
+rmse <- function(observed, predicted) {
+  sqrt(mean((predicted - observed)^2, na.rm = TRUE))
+}
+
+rmse_table <- tibble(
+  Model = c("Model 1 (Cases Only)", "Model 2 (Wastewater Only)", "Model 3 (Both)"),
+  RMSE = c(
+    rmse(test_data_with_predictions$ave_cases, test_data_with_predictions$model1_prediction),
+    rmse(test_data_with_predictions$ave_cases, test_data_with_predictions$model2_prediction),
+    rmse(test_data_with_predictions$ave_cases, test_data_with_predictions$model3_prediction)
+  )
+)
+
+# make a nice gt table
+rmse_table %>%
+  gt() %>%
+  fmt_number(
+    columns = c(RMSE),
+    decimals = 2
+  ) %>%
+  tab_header(
+    title = "Model Performance",
+    subtitle = "Root Mean Squared Error (RMSE)"
+  )
+
+```
+
+```{r prediction_figure, fig.align="center", fig.width=16, fig.height=8, echo = FALSE}
+
+ggplot() +
+  geom_line(data = full_data, aes(x = date, y = ave_cases, color = "Observed", group=1)) +
+  geom_line(data = test_data_with_predictions, aes(x = date, y = model1_prediction, color = "Case data only prediction", group=1)) +
+  geom_line(data = test_data_with_predictions, aes(x = date, y = model2_prediction, color = "Wastewater data only prediction", group=1)) +
+  geom_line(data = test_data_with_predictions, aes(x = date, y = model3_prediction, color = "Both prediction", group=1)) +
+  scale_color_manual(name = "Data Source", values = c(
+    "Observed" = "black",
+    "Case data only prediction" = "seagreen",
+    "Wastewater data only prediction" = "sienna",
+    "Both prediction" = "gold"
+  )) +
+  scale_x_date(
+    date_breaks = "2 months",  
+    date_labels = "%b %Y"
+  ) +
+  xlab("") + ylab("Norovirus cases") +
+  theme_minimal()
+
+```
