@@ -38,3 +38,7 @@
   - Makes a figure showing the model predictions against the observed data
 
 
+## How to render the report
+  - Clone the repository from Github
+  - Ensure project directory aligns with where you cloned the repository
+  - Run "make report.html" in the terminal
