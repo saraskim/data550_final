@@ -16,3 +16,7 @@ analysis: code/3_analysis.R data/train_data.rds data/test_data.rds
 .PHONY: clean
 clean:
 	rm -f data/*.rds && rm -f report.html
+	
+.PHONY: install
+install:
+	Rscript -e "renv::restore(prompt = FALSE)"

@@ -41,4 +41,9 @@
 ## How to render the report
   - Clone the repository from Github
   - Ensure project directory aligns with where you cloned the repository
+  - Syncrhonize package repository (see below)
   - Run "make report.html" in the terminal
+  
+  
+##  How to synchronize package repository
+  - Run "make install" in the terminal 
